@@ -241,3 +241,20 @@ function dms_to_deg(d, m, s) {
 function internal_div(p1, p2, m, n) {
 	return (m*p2 + n*p1) / (m + n);
 }
+
+/*************************
+ * JSON
+ *************************/
+function getObjectKeyIndex(obj, keyToFind) {
+	var i = 0, key;
+	for (key in obj) {
+		if (key == keyToFind) {
+			return i;
+		}
+		i++;
+	}
+	return null;
+}
+function getNextIndex(obj, index) {
+	return index >= Object.keys(obj).length - 1 ? 0 : index + 1;
+}

@@ -1,2 +1,71 @@
 
+h2, h4 {
+	font-family: NanumGothic, 나눔고딕, "Malgun Gothic", "맑은 고딕", sans-serif;
+}
+.logo {
+	background-color: #fff;
+	min-height: 90px;
+}
+.prname {
+	margin-top: 15px;
+	margin-right: 10px;
+}
+.prname h2 {
+	font-size: 2.0em;
+	font-weight: bold;
+}
+.fileinput-button {
+	position: relative;
+	overflow: hidden;
+	display: inline-block;
+}
+.fileinput-button input {
+	position: absolute;
+	top: 0;
+	right: 0;
+	margin: 0;
+	opacity: 0;
+	-ms-filter: 'alpha(opacity=0)';
+	font-size: 200px;
+	direction: ltr;
+	cursor: pointer;
+}
 
+.map {
+	height: 100%;
+}
+
+/* chart1 */
+#lineChart1 .axis path, #lineChart1 .axis line {
+	fill:none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
+#lineChart1 .x.axis path {
+	display: none;
+}
+
+#lineChart1 .line {
+	fill: none;
+	stroke: steelblue;
+	stroke-width: 1.5px;
+}
+
+/* char2 */
+#lineChart2 .axis path,
+#lineChart2 .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+#lineChart2 .x.axis path {
+  display: none;
+}
+
+#lineChart2 .line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
