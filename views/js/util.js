@@ -119,22 +119,30 @@ function str2Date(s){
 function str2Date2(s) {
 	var ymd = s.split(' ')[0];
 	var hms = s.split(' ')[1];
-	return new Date(ymd.split('/')[0], ymd.split('/')[1], ymd.split('/')[2], hms.split(':')[0], hms.split(':')[1], hms.split(':')[2]);
+	var yy = (ymd.split('/')[1] == "1") ? Number(ymd.split('/')[0]) -1 : ymd.split('/')[0];
+	var mm = (ymd.split('/')[1] == "1") ? 12 : Number(ymd.split('/')[1]) -1;
+
+	return new Date(yy, mm, hms.split(':')[0], hms.split(':')[1], hms.split(':')[2]);
 }
 
 //S == 2015-07-22 17:43:00 
 function str2Date3(s) {
 	var ymd = s.split(' ')[0];
 	var hms = s.split(' ')[1];
-	return new Date(ymd.split('-')[0], ymd.split('-')[1], ymd.split('-')[2], hms.split(':')[0], hms.split(':')[1], hms.split(':')[2]);
+	var yy = (ymd.split('-')[1] == "1") ? Number(ymd.split('-')[0]) -1 : ymd.split('-')[0];
+	var mm = (ymd.split('-')[1] == "1") ? 12 : Number(ymd.split('-')[1]) -1;
+
+	return new Date(yy, mm, ymd.split('-')[2], hms.split(':')[0], hms.split(':')[1], hms.split(':')[2]);
 }
 
 //S == 9/17/2015 8:24:29.000000
 function mdyhms2Date(s) {
 	var mdy = s.split(' ')[0];
 	var hms = (s.split(' ')[1]).split('.')[0];
+	var yy = (mdy.split('/')[0] == "1") ? Number(mdy.split('/')[2]) -1 : mdy.split('/')[2];
+	var mm = (mdy.split('/')[0] == "1") ? 12 : Number(mdy.split('/')[0]) -1;
 
-	return new Date(mdy.split('/')[2], mdy.split('/')[0], mdy.split('/')[1], hms.split(':')[0], hms.split(':')[1],hms.split(':')[2]);
+	return new Date(yy, mm, mdy.split('/')[1], hms.split(':')[0], hms.split(':')[1],hms.split(':')[2]);
 }
 
 function timeCompare(t, ref) {

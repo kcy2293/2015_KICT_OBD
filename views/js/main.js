@@ -1,4 +1,9 @@
 /************************
+ * 전역변수
+ ************************/
+var chartColArr = [];
+
+/************************
  * 화면 레이아웃
  ************************/
 $(window).resize(function () {
@@ -72,6 +77,8 @@ LeafletMap.prototype.drawAllDocs = function(db, dbName) {
 	db.getAllDocs(dbName, function(docs) {
 		var thurmalPoints = [];
 		var atTempPoints = [];
+		var xTArr = ["x"], dataT1 =["대기온도"], dataT2=["노면온도"], dataT3=["대기습도"];
+		var xAArr = ["x"], dataA1 =["ch1"], dataA2=["ch2"];
 
 		for (var i = 0 , len = docs.length ; i < len ; i++) {
 			var type = docs[i].id.split('_')[0];
@@ -84,16 +91,46 @@ LeafletMap.prototype.drawAllDocs = function(db, dbName) {
 				ll.title = "적외선 온도";
 				ll.ch1 = docs[i].doc.ch1;
 				ll.ch2 = docs[i].doc.ch2;
+				ll.dist = docs[i].doc.dist;
 				thurmalPoints.push(ll);
+				xTArr.push(Math.round(ll.dist)/1000);
+				dataT1.push(ll.temp);
+				dataT2.push(ll.rsTemp);
+				dataT3.push(ll.mois);
 			}
 
 			if (type.search("atTemp") > -1) {
 				var ll = new L.LatLng(docs[i].doc.lat, docs[i].doc.lon);
 				ll.temp = Number(docs[i].doc.ch1);
 				ll.title = "대기 온도";
+				ll.dist = docs[i].doc.dist;
 				atTempPoints.push(ll);
+				xAArr.push(Math.round(ll.dist)/1000);
+				dataA1.push(ll.temp);
+				dataA2.push(Number(docs[i].doc.ch2));
 			}
 		}
+
+		//if 적외선 데이타 일경우
+		chartColArr.push(xTArr); 		chartColArr.push(dataT1); 		chartColArr.push(dataT2);  chartColArr.push(dataT3);
+		var chartDataJson = {x: 'x', columns: chartColArr, count:10};
+		chartDataJson.axes = { "대기온도":'y', "노면온도":'y', "대기습도": 'y2'	}	;
+		var y2label =true;
+		//if 적외선이 아닐 경우
+		//chartColArr.push(xAArr); 		chartColArr.push(dataA1); 		chartColArr.push(dataA2);  
+		//var y2label =false;
+		//console.log(chartColArr);
+
+		var lineChart1 = c3.generate({
+				bindto: '#lineChart1',
+				data: chartDataJson,
+				axis: {
+								x: { label: '거리(km)'},
+								y: {	label: '온도(℃)'},
+								y2: {	show: y2label, label: '습도(%)'}
+						},
+				onclick: function (d, i) { console.log("onclick", d, i); }
+		});
 
 		var prevOptionIdx = getOptions(atTempPoints[0].temp).index;
 		var segmentLatLon = [atTempPoints[0]];

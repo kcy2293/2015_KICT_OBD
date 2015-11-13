@@ -14,18 +14,21 @@
  *  9 : Roll(deg)
  * 10 : Pitch(deg)
  * 11 : Heading(deg)
+ * 12 : gpstime(sec)
  *
  * this.thurmal [][]
  *  0 : gps time (DATE)
- *  1 : miliseconds (ms)
+ *  1 : miliseconds (ms) 소수점 이하
  *  2 : 대기온도
  *  3 : 대기습도
  *  4 : 노면온도
+ *  5 : miliseconds (ms) 정수
  *
  * this.atTemp [][] 외부온도
  *  0 : gps time (DATE)
  *  1 : 채널1 값
  *  2 : 채널2 값
+ *  3 : gps time (milisecondes)
  *********************************/
 var ROADINFO = new function() {
 	this.gps = [];
@@ -48,11 +51,24 @@ var ROADINFO = new function() {
 		}
 
 		var points = [];
+		var accuDist = 0;
 		for (var i = 0 , len = this.thurmal.length ; i < len ; i++) {
 		//for (var i = 0 , len = 280 ; i < len ; i++) {
 
-			var latlon = getThurmalLatLon(this.thurmal[i][0], Number(this.thurmal[i][1]) * 0.01);
+		//var latlon = getThurmalLatLon(this.thurmal[i][0], Number(this.thurmal[i][1]) * 0.01);
+		var latlon = getThurmalLatLon(this.thurmal[i][5], Number(this.thurmal[i][1]) * 0.01);
+
 			if (latlon) {
+				var dist = 0;
+				if(i > 0) {
+					var latlon2 = getThurmalLatLon(this.thurmal[i-1][5], Number(this.thurmal[i-1][1]) * 0.01);
+					if(latlon2) {
+						var ll = new L.LatLng(latlon2[0], latlon2[1]);
+						dist = ll.distanceTo (new L.LatLng(latlon[0], latlon[1]));
+						accuDist += dist;
+				console.log(i, accuDist, this.thurmal[i-1][0], Number(this.thurmal[i-1][1]) * 0.01 );
+					}
+				}
 
 				var ch1 = getAtTemp(this.thurmal[i][0])[0];
 				var ch2 = getAtTemp(this.thurmal[i][0])[1];
@@ -65,7 +81,8 @@ var ROADINFO = new function() {
 					"mois" : this.thurmal[i][3],
 					"rsTemp" : this.thurmal[i][4],
 					"ch1" : ch1,
-					"ch2" : ch2
+					"ch2" : ch2,
+					"dist" : accuDist
 				});
 
 			} else {
@@ -79,8 +96,17 @@ var ROADINFO = new function() {
 			return;
 		}
 		var points = [];
+		var accuDist = 0;
 		for (var i = 0 , len = this.atTemp.length ; i < len ; i++) {
 			var latlon = getAtTempLatLon(this.atTemp[i][0]);
+			var dist = 0;
+			if(i > 0) {
+				var latlon2 = getAtTempLatLon(this.atTemp[i-1][0]);
+				var ll = new L.LatLng(latlon2[0], latlon2[1]);
+				dist = ll.distanceTo (new L.LatLng(latlon[0], latlon[1]));
+				accuDist += dist;
+			}
+
 			if (latlon) {
 				this.atTempDocs.push({
 					"_id" : "atTemp_" + date2FullStr(this.atTemp[i][0]),
@@ -88,6 +114,7 @@ var ROADINFO = new function() {
 					"lon" : latlon[1],
 					"ch1" : this.atTemp[i][1],
 					"ch2" : this.atTemp[i][2],
+					"dist" : accuDist
 				});
 
 			} else {
@@ -156,7 +183,8 @@ var ROADINFO = new function() {
 		}
 
 		for (var i = 0, len = ROADINFO.gps.length-1 ; i < len ; i++) {
-			if (datesEqual(ROADINFO.gps[i][0], target)) {
+//			if (datesEqual(ROADINFO.gps[i][0], target)) {
+			if (datesEqual(ROADINFO.gps[i][12], target)) {
 
 				//leafletMap.addMarker(ROADINFO.gps[i][1], ROADINFO.gps[i][2]);
 				var lat = internal_div(ROADINFO.gps[i][1], ROADINFO.gps[i+1][1], ms, 1-ms);
@@ -342,6 +370,7 @@ $("#deleteButton").click(function() {
  * 데이터베이스 변경시
  ************************/
 $("#dbList").change(function() {
+	chartColArr = [];
 	var dbName = $("#dbList").val();
 	leafletMap.clearLayers();
 	leafletMap.drawAllDocs(database, dbName);
@@ -384,6 +413,7 @@ $("#gpsFile").change(function(e) {
 
 				var mdyhms = lines[i].substring(16, 26).trim() + " " + lines[i].substring(0, 14).trim();
 				var date = mdyhms2Date(mdyhms);
+				var gpstime = FormatGpsTime(date, 1);
 
 				ROADINFO.gps.push([
 					date, 
@@ -397,7 +427,8 @@ $("#gpsFile").change(function(e) {
 					Number(lines[i].substring(120, 131).trim()), // Vup Sol(m/s)
 					Number(lines[i].substring(133, 143).trim()), // Roll(deg)
 					Number(lines[i].substring(145, 154).trim()), // Pitch(deg)
-					Number(lines[i].substring(156, 165).trim()) // Heading(deg)
+					Number(lines[i].substring(156, 165).trim()), // Heading(deg)
+					gpstime, // gpstime(sec)
 				]);
 			}
 
@@ -447,13 +478,13 @@ $("#thurmalFile").change(function(e) {
 				imsiCnt++;
 			}
 
-
 			ROADINFO.thurmal.push([
 				subHours(str2Date2(fields[1]), 9),
 				Number(fields[5].split('.')[1]),
 				fields[2],
 				fields[3],
-				fields[4]
+				fields[4],
+				Number(fields[5].split('.')[0])
 			]);
 		}
 
