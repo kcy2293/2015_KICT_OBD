@@ -33,39 +33,18 @@ h2, h4 {
 
 .map {
 	height: 100%;
+	margin-bottom: 20px;
 }
 
-/* chart1 */
-#lineChart1 .axis path, #lineChart1 .axis line {
-	fill:none;
-	stroke: #000;
-	shape-rendering: crispEdges;
+.show {
+	display: inline;
 }
 
-#lineChart1 .x.axis path {
+.hide {
 	display: none;
 }
 
-#lineChart1 .line {
-	fill: none;
-	stroke: steelblue;
-	stroke-width: 1.5px;
+.unvisible {
+	visibility: hidden;
 }
 
-/* char2 */
-#lineChart2 .axis path,
-#lineChart2 .axis line {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
-
-#lineChart2 .x.axis path {
-  display: none;
-}
-
-#lineChart2 .line {
-  fill: none;
-  stroke: steelblue;
-  stroke-width: 1.5px;
-}

@@ -122,7 +122,7 @@ function str2Date2(s) {
 	var yy = (ymd.split('/')[1] == "1") ? Number(ymd.split('/')[0]) -1 : ymd.split('/')[0];
 	var mm = (ymd.split('/')[1] == "1") ? 12 : Number(ymd.split('/')[1]) -1;
 
-	return new Date(yy, mm, hms.split(':')[0], hms.split(':')[1], hms.split(':')[2]);
+	return new Date(yy, mm, ymd.split('/')[2], hms.split(':')[0], hms.split(':')[1], hms.split(':')[2]);
 }
 
 //S == 2015-07-22 17:43:00 
@@ -200,15 +200,15 @@ function todayMSec(d){
 /*************************
  * Cookies
  *************************/
-function setCookie(cname, cvalue, exdays) {
+function setCookie(key, value, exdays) {
     var d = new Date();
     d.setTime(d.getTime() + (exdays*24*60*60*1000));
     var expires = "expires="+d.toUTCString();
-    document.cookie = cname + "=" + cvalue + "; " + expires;
+    document.cookie = key + "=" + value + "; " + expires;
 }
 
-function getCookie(cname) {
-    var name = cname + "=";
+function getCookie(key) {
+    var name = key + "=";
     var ca = document.cookie.split(';');
     for(var i=0; i<ca.length; i++) {
         var c = ca[i];
@@ -218,8 +218,8 @@ function getCookie(cname) {
     return undefined;
 }
 
-function deleteCookie(cname) {
-	document.cookie = cname + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+function deleteCookie(key) {
+	document.cookie = key + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC";
 }
 
 /*************************
@@ -231,6 +231,13 @@ function appendListItem(divid, value, text) {
 
 function removeListItem(divid, value) {
 	$(divid + " option[value="+value).remove();
+}
+
+/*************************
+ * 높이구하기
+ *************************/
+function getHeightByDiv(divid) {
+	return $(divid).outerHeight(true);
 }
 
 /*************************
@@ -265,4 +272,46 @@ function getObjectKeyIndex(obj, keyToFind) {
 }
 function getNextIndex(obj, index) {
 	return index >= Object.keys(obj).length - 1 ? 0 : index + 1;
+}
+
+/*************************
+ * 로딩 관련
+ *************************/
+function loadingOnText() {
+	var over = "<div id='overlay' style='left: 0; top: 0; \
+								position: absolute; \
+								bottom: 0;\
+								right: 0;\
+								background: #000;\
+								opacity: 0.8;\
+								filter: alpha(opacity=80);\
+								z-index: 1000;'>" +
+					"<div style='position:absolute;top:10%; left:40%; font-color: white;font-size:2em; font-weight: bold;'>자료를 구성중입니다.</div>" +
+
+				"</div>";
+
+	$(over).appendTo('body');
+}
+
+function loadingOff() {
+	$("#overlay").remove();
+}
+
+function loadingOnImg() {
+	var over = "<div id='overlay' style='left: 0; top: 0; \
+								position: absolute; \
+								bottom: 0;\
+								right: 0;\
+								background: #000;\
+								opacity: 0.8;\
+								filter: alpha(opacity=80);\
+								z-index: 1000;'>" +
+					"<img id='loading' src='images/loader.gif' style='left:40%;top:40%;\
+															position: absolute;\
+															width: 188px; \
+															height: 129px; '></div>" +
+
+				"</div>";
+
+	$(over).appendTo('body');
 }

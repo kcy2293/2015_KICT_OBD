@@ -53,7 +53,6 @@ var ROADINFO = new function() {
 		var points = [];
 		var accuDist = 0;
 		for (var i = 0 , len = this.thurmal.length ; i < len ; i++) {
-		//for (var i = 0 , len = 280 ; i < len ; i++) {
 
 		//var latlon = getThurmalLatLon(this.thurmal[i][0], Number(this.thurmal[i][1]) * 0.01);
 		var latlon = getThurmalLatLon(this.thurmal[i][5], Number(this.thurmal[i][1]) * 0.01);
@@ -66,12 +65,8 @@ var ROADINFO = new function() {
 						var ll = new L.LatLng(latlon2[0], latlon2[1]);
 						dist = ll.distanceTo (new L.LatLng(latlon[0], latlon[1]));
 						accuDist += dist;
-				console.log(i, accuDist, this.thurmal[i-1][0], Number(this.thurmal[i-1][1]) * 0.01 );
 					}
 				}
-
-				var ch1 = getAtTemp(this.thurmal[i][0])[0];
-				var ch2 = getAtTemp(this.thurmal[i][0])[1];
 
 				this.thurmalDocs.push({
 					"_id" : "thurmal_" + date2FullStr(this.thurmal[i][0]) + "_" + this.thurmal[i][1].padLeft(),
@@ -80,8 +75,6 @@ var ROADINFO = new function() {
 					"temp" : this.thurmal[i][2],
 					"mois" : this.thurmal[i][3],
 					"rsTemp" : this.thurmal[i][4],
-					"ch1" : ch1,
-					"ch2" : ch2,
 					"dist" : accuDist
 				});
 
@@ -124,6 +117,8 @@ var ROADINFO = new function() {
 	};
 
 	this.drawAllDocs = function() {
+
+		// 맵 라인 추가 - 대기온도
 		var prevOptionIdx = getOptions(Number(this.atTempDocs[0].ch1)).index;
 		var segmentLatLon = [new L.LatLng(this.atTempDocs[0].lat, this.atTempDocs[0].lon)];
 		for (var i = 1, len = this.atTempDocs.length ; i < len ; i++) {
@@ -141,6 +136,7 @@ var ROADINFO = new function() {
 			}
 		}
 
+		// 맵 라인 추가 - 적외선
 		prevOptionIdx = getOptions(Number(this.thurmalDocs[0].temp)).index;
 		segmentLatLon = [new L.LatLng(this.thurmalDocs[0].lat, this.thurmalDocs[0].lon)];
 
@@ -232,149 +228,162 @@ var ROADINFO = new function() {
  *********************************/
 $("#insertButton").click(function() {
 	ROADINFO.clearRepo();
-
-	var checkBox = $("#newDbCheckbox");
-	var dbNameBox = $("#dbName");
-	var insertModal = $("#insertModal");
-
-	var selectedDb = $("#dbList").val();
-	if (selectedDb == null) {
-		checkBox
-			.prop("checked", true)
-			.prop("disabled", true);
-	} else {
-		dbNameBox
-			.val(selectedDb)
-			.prop("disabled", true);
-
-		checkBox.change(function() {
-			if (this.checked) {
-				dbNameBox
-					.val('')
-					.prop("disabled", false);
-			} else {
-				dbNameBox
-					.val(selectedDb)
-					.prop("disabled", true);
-			}
-		});
-	}
-
-	insertModal.modal('toggle');
+	$("#insertModal").modal('toggle');
 });
 	
 /*********************************
  * 저장버튼 클릭시 이벤트
  *********************************/
 $("#saveButton").click(function() {
-	var checkBox = $("#newDbCheckbox");
-	var dbNameBox = $("#dbName");
 	var insertModal = $("#insertModal");
 
+	if (ROADINFO.gps.length == 0 || (ROADINFO.thurmal.length == 0 && ROADINFO.atTemp.length == 0)) {
+		return;
+	}
+
+	if (ROADINFO.atTemp.length) {
+		ROADINFO.buildAtTempDocs();
+		database.bulkInsert(database.baseName, ROADINFO.atTempDocs);
+	}
+	if (ROADINFO.thurmal.length) {
+		ROADINFO.buildThurmalDocs();
+		database.bulkInsert(database.baseName, ROADINFO.thurmalDocs);
+	}
+
+	// CLOSE
+	insertModal.modal('toggle');
+	insertModalClear();
+
+	//leafletMap.clearLayers();
+	//ROADINFO.drawAllDocs();
+	window.location.reload();
+});
+
+function insertModalClear() {
 	var gpsFile = $("#gpsFile");
 	var thurmalFile = $("#thurmalFile");
 	var atTempFile = $("#atTempFile");
 
-	if (ROADINFO.gps.length == 0 || ROADINFO.thurmal.length == 0 || ROADINFO.atTemp == 0) {
-		return;
-	}
-
-	var dbName = dbNameBox.val();
-	if (dbName) {
-
-		leafletMap.clearLayers();
-
-		ROADINFO.buildAtTempDocs();
-		ROADINFO.buildThurmalDocs();
-		ROADINFO.drawAllDocs();
-
-		if(checkBox.prop("checked")) {
-			// 신규생성
-			database.createDb(dbName, function(err, dbName) {
-				if (err) {
-					// 에러핸들링
-				} else {
-					appendListItem("#dbList", dbName, dbName);
-					database.bulkInsert(dbName, ROADINFO.thurmalDocs);
-					database.bulkInsert(dbName, ROADINFO.atTempDocs);
-					$("#dbList").val(dbName);
-				}
-			});
-		} else {
-			// 기존업데이트
-			database.bulkInsert(dbName, ROADINFO.thurmalDocs);
-			database.bulkInsert(dbName, ROADINFO.atTempDocs);
-		}
-
-		dbNameBox
-			.val('')
-			.prop("disabled", false);
-		checkBox
-			.prop("checked", false)
-			.prop("disabled", false);
-
-		if (isIE) {
-			gpsFile.replaceWith( gpsFile.val('').clone(true) );
-			thurmalFile.replaceWith( thurmalFile.val('').clone(true) );
-			atTempFile.replaceWith( atTempFile.val('').clone(true) );
-		} else {
-			gpsFile.val("");
-			thurmalFile.val("");
-			atTempFile.val("");
-		}
-
-		$("#gpsFileName").text("");
-		$("#thurmalFileName").text("");
-		$("#atTempFileName").text("");
-
-		$("#gpsProgress")
-			.css("width", "0%")
-			.text("");
-		$("#thurmalProgress")
-			.css("width", "0%")
-			.text("");
-		$("#atTempProgress")
-			.css("width", "0%")
-			.text("");
-
-
-		insertModal.modal('toggle');
-
+	if (isIE) {
+		gpsFile.replaceWith( gpsFile.val('').clone(true) );
+		thurmalFile.replaceWith( thurmalFile.val('').clone(true) );
+		atTempFile.replaceWith( atTempFile.val('').clone(true) );
 	} else {
-		dbNameBox.focus();
+		gpsFile.val("");
+		thurmalFile.val("");
+		atTempFile.val("");
 	}
+
+	$("#gpsFileName").text("");
+	$("#thurmalFileName").text("");
+	$("#atTempFileName").text("");
+
+	$("#gpsProgress")
+		.css("width", "0%")
+		.text("");
+	$("#thurmalProgress")
+		.css("width", "0%")
+		.text("");
+	$("#atTempProgress")
+		.css("width", "0%")
+		.text("");
+}
+/************************
+ * 데이터베이스 변경시
+ ************************/
+$("#dbList").change(function() {
+	var dbName = $("#dbList").val();
+	setCookie("name", dbName, 30);
+	window.location.reload();
 });
 
 /************************
- * 데이터베이스 삭제
+ * 자료삭제 버튼 클릭시
  ************************/
 $("#deleteButton").click(function() {
 	var selectedDb = $("#dbList").val();
 	if (selectedDb != null) {
 		database.deleteDb(selectedDb, function(err, result) {
-			if (err) {
-				// 에러핸들링
-			} else {
-				leafletMap.clearLayers();
-				if (result.ok) {
-					database.setDbList(function(dbName) {
-						leafletMap.drawAllDocs(database, dbName);
-					});
-				}
-			}
+			setCookie("name", _TOTAL_DATABASE, 30);
+			window.location.reload();
 		});
 	}
 });
 
 /************************
- * 데이터베이스 변경시
+ * 부분입력 버튼 클릭시
  ************************/
-$("#dbList").change(function() {
-	chartColArr = [];
-	var dbName = $("#dbList").val();
-	leafletMap.clearLayers();
-	leafletMap.drawAllDocs(database, dbName);
+$("#clipButton").click(function() {
+	if (!sharedObject.totalDocs) {
+		alert("전체 자료를 먼저 입력하여주십시요!");
+		return;
+	}
+
+	if (!sharedObject.sTime || !sharedObject.eTime) {
+		alert("지도 왼편 'S', 'E' 버튼을 눌러 부분입력할 위치를 지정해주세요");
+		return;
+	}
+
+	var clipDocs = [];
+	var s = sharedObject.sTime;
+	var e = sharedObject.eTime;
+
+	if (s > e) {
+		var temp = e;
+		e = s;
+		s = temp;
+	}
+
+	for (var i = 0, len = sharedObject.totalDocs.length ; i < len ; i++) {
+		var docTime = Number(sharedObject.totalDocs[i].id.split('_')[1]);
+		if (s < docTime && docTime < e) {
+			clipDocs.push(sharedObject.totalDocs[i].doc);
+		}
+	}
+
+	database.createDb(getNextClipName(), function(err, dbName) {
+		if (err) {
+		} else {
+			database.bulkInsert(dbName, clipDocs, function(result) {
+				if (clipDocs.length != result.length) {
+					console.error("저장될 데이터양과 저장된 데이터양이 다릅니다. 체크바람");
+				}
+				appendListItem("#dbList", dbName, dbName);
+				//alert(dbName + " 으로 부분자료가 저장되었습니다.");
+				$("#dbList").val(dbName).trigger('change');
+			});
+		}
+	});
+
+	/*
+	sharedObject.sTime = undefined;
+	sharedObject.eTime = undefined;
+	*/
 });
+
+function getNextClipName() {
+
+	var lists = $.map($("#dbList option"), function(option) {
+		if (option.value.indexOf(_TOTAL_DATABASE) < 0)
+		    return option.value;
+	});
+
+	var len = lists.length;
+	var nextIdx = 0;
+	if(len) {
+		for (var i = 0; i < len ; i++) {
+			var idx = Number(lists[i].substring(4, lists[i].length)) + 1;
+			if (nextIdx == 0) {
+				nextIdx = idx;
+			} else if (idx > nextIdx) {
+				nextIdx = idx;
+			}
+		}
+		return "area" + nextIdx;
+	} else {
+		return "area1";
+	}
+}
 
 /************************
  *  GPS 파일 데이터 추출
@@ -442,9 +451,9 @@ $("#gpsFile").change(function(e) {
 	fileReader.readAsText(file);
 });
 
-/************************
+/***************************
  * 적외선 파일 데이터 추출
- ************************/
+ ***************************/
 $("#thurmalFile").change(function(e) {
 	var file = e.target.files[0];
 	$("#thurmalFileName").text(file.name);
@@ -498,9 +507,9 @@ $("#thurmalFile").change(function(e) {
 	fileReader.readAsText(file);
 });
 
-/************************
+/****************************
  * 대기온도 파일 데이터 추출
- ************************/
+ ****************************/
 $("#atTempFile").change(function(e) {
 	var file = e.target.files[0];
 	$("#atTempFileName").text(file.name);
@@ -543,5 +552,45 @@ $("#atTempFile").change(function(e) {
 	});
 
 	fileReader.readAsText(file);
+});
+
+/****************************
+ * 맵 레이어 변경 이벤트
+ ****************************/
+leafletMap.map.on('baselayerchange', function(e) {
+	if((e.name).indexOf("대기") > -1) {
+		sharedObject.viewType = "atTemp";
+	} else if((e.name).indexOf("적외선") > -1) {
+		sharedObject.viewType = "thurmal";
+	}
+	lineChart.loadByType();
+	table.loadByType();
+});
+
+/***********************************************
+ * 시작점, 끝점 부분입력을 위한 맵 팝업 이벤트
+ ***********************************************/
+leafletMap.map.on('popupopen', function(e) {
+	if (sharedObject.onStartClip) {
+		sharedObject.sTime = Number(e.popup.time);
+		leafletMap.btnOff("start");
+
+		if (sharedObject.startIcon) {
+			sharedObject.startIcon.setLatLng(e.popup.getLatLng());
+		} else {
+			leafletMap.addStartIcon(e.popup.getLatLng());
+		}
+	}
+
+	else if (sharedObject.onEndClip) {
+		sharedObject.eTime = Number(e.popup.time);
+		leafletMap.btnOff("end");
+
+		if (sharedObject.endIcon) {
+			sharedObject.endIcon.setLatLng(e.popup.getLatLng());
+		} else {
+			leafletMap.addEndIcon(e.popup.getLatLng());
+		}
+	}
 });
 
