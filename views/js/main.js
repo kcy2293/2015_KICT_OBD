@@ -536,7 +536,7 @@ BootTable.prototype.buildTableData = function(docs) {
  ************************/
 loadingOnText();
 
-var lastName = getCookie("name");
+var lastName = getCookie("name") || _TOTAL_DATABASE;
 if (lastName) {
 	sharedObject.database = lastName;
 }
